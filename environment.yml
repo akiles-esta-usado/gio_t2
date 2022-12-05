@@ -1,0 +1,12 @@
+name: ILN250_PV_AV_T2
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - numpy
+  - matplotlib
+  - pip
+  - jupyter
+  - pandas
+  - numba
+  - ipykernel
