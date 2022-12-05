@@ -1,0 +1,10 @@
+reset;
+
+model six_hump.mod;
+data six_hump.data
+option solver CPLEX;
+
+solve;
+ 
+printf "coordenadas: [%3f %3f]\n", x1, x2;
+printf "Tiempo de resolución total:        %2f [s]\n", _total_solve_time;
