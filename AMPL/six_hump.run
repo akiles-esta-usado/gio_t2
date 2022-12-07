@@ -8,6 +8,6 @@ solve;
 
 display Function_value;
  
-printf "El costo minimo es \n", Function_value;
+printf "El costo minimo es ", Function_value;
 
 printf "Tiempo de resolución total:        %2f [s]\n", _total_solve_time;
