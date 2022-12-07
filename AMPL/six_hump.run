@@ -5,6 +5,9 @@ data six_hump.data
 option solver CPLEX;
 
 solve;
+
+display Function_value;
  
-printf "coordenadas: [%3f %3f]\n", x1, x2;
+printf "El costo minimo es \n", Function_value;
+
 printf "Tiempo de resolución total:        %2f [s]\n", _total_solve_time;
