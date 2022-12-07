@@ -1,7 +1,7 @@
 reset;
 
 model six_hump.mod;
-data six_hump.data
+data six_hump.dat;
 option solver CPLEX;
 
 solve;

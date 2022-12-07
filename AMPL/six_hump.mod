@@ -8,21 +8,25 @@ param alpha{I};	#OFERTA
 
 param beta{J};	#DEMANDA
 
-param a{I}{J};	#COSTO;
+param a{I,J};	#COSTO
 
 #VAR
-var Uij{I}{J};	#CUANTO DEBO ENVIAR DE DESDE EL LUGAR ALPHA A LUGAR BETA
+var Uij{I,J};	#CUANTO DEBO ENVIAR DE DESDE EL LUGAR ALPHA A LUGAR BETA
 
 
 # FUNCION OBJETIVO
-minimize Function_value: sum{i in I, j in J}(Uji[i,j]*a[i,j]);
+minimize Function_value:
+    sum{i in I, j in J} (Uij[i,j]*a[i,j]);
 
 #RESTRICCIONES
 
-subject to R1{j in J}:
-	sum{i in I}(Uij[i,j])=beta[j];
-	
-subject to R2{i in I}:
-	alpha[i]=sum{j in J}(Uij[i,j]);
-	
 
+## Naturaleza de Variable: Uij mayor o igual a 0.
+subject to R1{i in I, j in J}:
+    Uij[i,j] >= 0
+
+subject to R2{j in J}:
+	sum{i in I}(Uij[i,j])=beta[j];
+
+subject to R3{i in I}:
+	alpha[i]=sum{j in J}(Uij[i,j]);
