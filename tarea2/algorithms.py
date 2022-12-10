@@ -128,23 +128,30 @@ def direccion_costo_reducido(X: NDArray, A: NDArray, B:NDArray, NB: NDArray, c: 
   # i, d, cr
   return NB_i, d, cr.flatten()
 
-def lista_direccion_costos_reducidos(X: NDArray, A: NDArray, c: NDArray, B:NDArray, NB: NDArray) -> NDArray:
+def costos_reducidos(A: NDArray, c: NDArray, B: NDArray, NB: NDArray) -> NDArray:
+  #return 
+  return c[NB] + np.linalg.multi_dot([
+    c[B],
+    np.linalg.inv(A[:,B]),
+    A[NB]
+  ])
 
+def lista_direccion_costos_reducidos(X: NDArray, A: NDArray, c: NDArray, B:NDArray, NB: NDArray) -> NDArray:
   d_cr_list = list()
 
-  for NB_i in NB:
+  for j in NB:
     d = np.zeros(shape=X.shape)
     d_B = - np.dot(
       np.linalg.inv(A[:,B]),
-      A[:, NB_i]
+      A[:, j]
     )
 
-    np.put(d, NB_i, 1)
+    np.put(d, j, 1)
     np.put(d, B, d_B)
 
 
-    cr = c[NB_i] + np.dot(c[B].T, d[B])
+    cr = c[j] + np.dot(c[B].T, d[B])
 
-    d_cr_list.append((NB_i, d, cr[0][0]))
+    d_cr_list.append((j, d, cr[0][0]))
 
   return d_cr_list
