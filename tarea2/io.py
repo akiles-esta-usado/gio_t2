@@ -4,16 +4,16 @@ import pandas as pd
 
 def get_data(data_path: Path):
   alpha_i_path = data_path / "alpha_i.csv"
-  if alpha_i_path.exists():
-    print("El archivo alpha_i.csv existe :)")
+  if not alpha_i_path.exists():
+    RuntimeError("El archivo alpha_i.csv no existe :(")
 
   beta_j_path = data_path / "beta_j.csv"
-  if beta_j_path.exists():
-    print("El archivo beta_j.csv existe :)")
+  if not beta_j_path.exists():
+    RuntimeError("El archivo beta_j.csv no existe :(")
 
   a_ij_path = data_path / "a_ij.csv"
-  if a_ij_path.exists():
-    print("El archivo a_ij.csv existe :)")
+  if not a_ij_path.exists():
+    RuntimeError("El archivo a_ij.csv no existe :(")
 
 
   alpha_i = pd.read_csv(alpha_i_path, header=None).to_numpy() # Oferta de nodo origen

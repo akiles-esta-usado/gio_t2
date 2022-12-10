@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.typing import NDArray
+from pprint import pprint
 
 def simplex_normalization(A: NDArray, entra: int, sale: int):
   A = A.copy()
@@ -85,13 +86,6 @@ def north_west_heuristic(oferta_i: NDArray, demanda_j: NDArray, costos_ij: NDArr
     # print()
 
 
-def costos_reducidos(idx_B: NDArray, idx_NB: NDArray, A: NDArray, c: NDArray) -> NDArray:
-  c_B = c[idx_B]
-  A_B = A[:, idx_B]
-  c_NB = c[idx_NB]
-  A_NB = A[:, idx_NB]
-  
-  return c_NB - np.linalg.multi_dot( [c_B,  np.linalg.inv(A_B) , A_NB])
 
 
 
@@ -128,13 +122,43 @@ def direccion_costo_reducido(X: NDArray, A: NDArray, B:NDArray, NB: NDArray, c: 
   # i, d, cr
   return NB_i, d, cr.flatten()
 
-def costos_reducidos(A: NDArray, c: NDArray, B: NDArray, NB: NDArray) -> NDArray:
-  #return 
-  return c[NB] + np.linalg.multi_dot([
-    c[B],
+def costos_reducidos(A: NDArray, c: NDArray, B: NDArray, NB: NDArray, DEBUG: bool=False) -> NDArray:
+  
+  C_AB_ANB = np.linalg.multi_dot([
+    c[B].T,
     np.linalg.inv(A[:,B]),
-    A[NB]
-  ])
+    A[:, NB]]
+  )
+
+  X_cr = c[NB].ravel() - C_AB_ANB.ravel()
+
+  if DEBUG:
+
+    print("\nCostos reducidos:")
+
+    print("  c[NB] es:")
+    pprint(c[NB])
+
+    print("  c[B] es:")
+    pprint(c[B])
+
+    print("  A[:, B] es:")
+    pprint(A[:, B])
+
+    print("  A[:, B]^-1 es:")
+    pprint(np.linalg.inv(A[:, B]))
+
+    print("  A[:, NB] es:")
+    pprint(A[:, NB])
+
+    print("  C_AB_ANB es:")
+    pprint(C_AB_ANB)
+
+    print("  X_cr es:")
+    pprint(X_cr)
+
+  return X_cr
+
 
 def lista_direccion_costos_reducidos(X: NDArray, A: NDArray, c: NDArray, B:NDArray, NB: NDArray) -> NDArray:
   d_cr_list = list()
@@ -155,3 +179,157 @@ def lista_direccion_costos_reducidos(X: NDArray, A: NDArray, c: NDArray, B:NDArr
     d_cr_list.append((j, d, cr[0][0]))
 
   return d_cr_list
+
+
+#################
+def simplex(A, b, c, B, NB, DEBUG=False):
+  X = np.zeros(shape=c.shape)
+
+  for _ in range(1000):
+    if DEBUG:
+      print("A:")
+      pprint(A)
+
+      print("b:")
+      pprint(b)
+
+      print("c:")
+      pprint(c)
+
+      print("B:")
+      pprint(B)
+
+      print("A[B]:")
+      pprint(A[:,B])
+
+      print("NB:")
+      pprint(NB)
+
+      print("A[NB]:")
+      pprint(A[:,NB])
+
+
+    X[B] = np.dot(np.linalg.inv(A[:,B]), b)
+    X[NB] = 0
+
+    if DEBUG:
+      print("X:")
+      pprint(X)
+
+      print("X[B]:")
+      pprint(X[B])
+
+      print("X[NB]:")
+      pprint(X[NB])
+
+    print("\nX es solución:")
+    if (X >= 0).all():
+      print("- básica factible ")
+    else:
+      print("- no es solución básica factible. Termino de Simplex")
+      return np.zeros(shape=X.shape)
+
+    if (X[B] == 0).any():
+      print("- degenerada")
+      pprint(lista_direccion_costos_reducidos(X, A, c, B, NB))
+      return X
+
+
+    X_cr = costos_reducidos(A, c, B, NB, DEBUG)
+
+
+    if (X_cr >= 0).all():
+      print(f"- óptima de valor {X * c}")
+
+      if (X_cr == 0).any():
+        print("- Hay múltiples óptimos")
+      else:
+        print("- Es óptimo único")
+
+      return X
+
+    else:
+      print("- no es óptima")
+
+
+    # DETERMINAR DIRECCIONES Y COSTOS REDUCIDOS
+    ###########################################
+
+    # Lo más sensato es empezar con una solución básica factible
+    # Luego derivar la base, no-base y seguir.
+    d_cr_list = lista_direccion_costos_reducidos(X, A, c, B, NB)
+
+    if DEBUG:
+      print("\nLista de direcciones y costos reducidos: ")
+      pprint(d_cr_list)
+
+
+    # ENCONTRAR DIRECCIÓN Y PASO
+    ############################
+
+    if DEBUG:
+      print("\nCosto básico solución básica X_B: ")
+      pprint(c[B])
+
+    # Determinar dirección con menor costo reducido
+    # (NB_i, d, cr)
+    d_cr_min = min(d_cr_list, key=lambda x: x[2])
+
+    if DEBUG:
+      print("\nDirección de menor costo reducido: ")
+      pprint(d_cr_min)
+
+    # Obtener componentes de la dirección de menor costo reducido que:
+    # - Pertenezcan a la base.
+    # - Sean menores a cero.
+
+    B_menores_a_cero = [B[i] for i, d_i in enumerate( d_cr_min[1][B] ) if d_i < 0]
+
+    if DEBUG:
+      print(f"{B_menores_a_cero = }")
+
+    if len(B_menores_a_cero) == 0:
+      print("El salto se hace infinito")
+      print("El costo óptimo está indeterminado y se termina el algoritmo")
+      break
+
+    # Obtener la lista de coeficientes de desplazamientos posibles
+    phi_list = [(- X[i] / d_cr_min[1][i], i) for i in B_menores_a_cero]
+
+    # Quedarse con el menor, y determinar su índice (El que sale)
+    phi, B_sale = min(phi_list)
+
+    if DEBUG:
+      print(f"{phi_list = }")
+      print(f"{phi = }")
+
+
+    # ACTUALIZAR BASE Y NO_BASE
+    ########################################
+
+    NB_entra = d_cr_min[0]
+    B_sale_row =   np.where(B == B_sale)[0][0]
+    NB_entra_row = np.where(NB == NB_entra)[0][0]
+
+    if DEBUG:
+      print()
+      print(f"Entra a la base: {NB_entra}")
+      print(f"Sale de la base: {B_sale}")
+
+    B.put(B_sale_row, NB_entra)
+    NB.put(NB_entra_row, B_sale)
+
+    if DEBUG:
+      print()
+      print("B actualizado:")
+      pprint(B)
+      print("NB actualizado:")
+      pprint(NB)
+
+      print()
+      print()
+      print()
+      print()
+  
+  print("Entonces esto no terminó bien :(")
+  return X
