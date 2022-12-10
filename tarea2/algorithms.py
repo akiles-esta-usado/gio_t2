@@ -145,6 +145,6 @@ def lista_direccion_costos_reducidos(X: NDArray, A: NDArray, c: NDArray, B:NDArr
 
     cr = c[NB_i] + np.dot(c[B].T, d[B])
 
-    d_cr_list.append((NB_i, d, cr.flatten()))
+    d_cr_list.append((NB_i, d, cr[0][0]))
 
   return d_cr_list
