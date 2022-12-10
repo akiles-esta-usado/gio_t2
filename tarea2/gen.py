@@ -32,10 +32,13 @@ def gen_A(I: list, J: list):
 
     restriccion_base += 1
 
-  return A
+  # Dado que la sumatoria de ofertas equivale a la de las demandas, habrá
+  # una ecuación de igualdad que será LI con el resto.
+  # De forma arbitraria, eliminaré la última fila.
+  return A[:-1, :].copy()
 
-def gen_b(oferta_i, demanda_j):
-  return np.append(oferta_i,  demanda_j)
+def gen_b(oferta_i: NDArray, demanda_j: NDArray):
+  return np.concatenate([oferta_i,  demanda_j[:-1]])
 
 
 def gen_mapping(I, J):
